@@ -87,6 +87,5 @@ jobs:
           # use the image name set in previous job output
           IMAGE_LOWER="${{ needs.build_and_scan.outputs.image_lower }}"
           echo "Pushing images for: $IMAGE_LOWER"
-          docker push ${{ IMAGE_LOWER }}:${GITHUB_SHA}
-
-          docker push $IMAGE_LOWER:latest
+          docker push "$IMAGE_LOWER:${GITHUB_SHA}"
+          docker push "$IMAGE_LOWER:latest"
