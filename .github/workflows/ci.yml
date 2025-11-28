@@ -52,8 +52,11 @@ jobs:
 
       - name: Build Docker image
         run: |
-          docker build -t $IMAGE_LOWER:${GITHUB_SHA} .
-          docker tag $IMAGE_LOWER:${GITHUB_SHA} $IMAGE_LOWER:latest
+          docker build -t ${{ env.IMAGE_LOWER }}:${GITHUB_SHA} .
+          docker tag ${{ env.IMAGE_LOWER }}:${GITHUB_SHA} ${{ env.IMAGE_LOWER }}:latest
+
+          # docker build -t $IMAGE_LOWER:${GITHUB_SHA} .
+          # docker tag $IMAGE_LOWER:${GITHUB_SHA} $IMAGE_LOWER:latest
           docker images
 
       - name: Trivy Scan
