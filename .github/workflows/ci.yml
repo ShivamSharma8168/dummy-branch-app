@@ -44,7 +44,10 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Set lowercase image repository
-        run: echo "IMAGE_LOWER=ghcr.io/$(echo \"$GITHUB_REPOSITORY\" | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
+        run: |
+          IMAGE_LOWER="ghcr.io/${GITHUB_REPOSITORY,,}"
+          echo "IMAGE_LOWER=$IMAGE_LOWER" >> $GITHUB_ENV
+          echo "Using image: $IMAGE_LOWER"
 
 # And remove IMAGE_LOWER from the top-level 'env' section.
 
