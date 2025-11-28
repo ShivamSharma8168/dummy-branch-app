@@ -2,96 +2,86 @@ name: CI/CD Pipeline
 
 on:
   push:
-    branches: ["main"]
+    branches: [ "main" ]
   pull_request:
-    branches: ["main"]
-
-env:
-  REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository_owner }}/dummy-branch-app
+    branches: [ "main" ]
 
 jobs:
-  # ------------------------
-  # 1. Code Quality + Tests
-  # ------------------------
+
   test:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
 
       - name: Install dependencies
         run: pip install -r requirements.txt
 
-      - name: Run basic sanity test
+      - name: Sanity Test
         run: |
           python - << 'EOF'
-          import sys
-          print("Basic sanity test passed - Python app imports successfully.")
+          print("Sanity OK")
           EOF
 
-  # ------------------------
-  # 2. Security Scan + Build
-  # ------------------------
   build_and_scan:
     runs-on: ubuntu-latest
     needs: test
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Log in to GHCR
+      - name: Login to GHCR
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Normalize image name to lowercase
+      - name: Set lowercase image name
+        id: img
         run: |
-         IMAGE_NAME_LOWER=$(echo "${{ env.IMAGE_NAME }}" | tr '[:upper:]' '[:lower:]')
-         echo "IMAGE_NAME_LOWER=$IMAGE_NAME_LOWER" >> $GITHUB_ENV
-
+          IMAGE="ghcr.io/${GITHUB_REPOSITORY,,}"
+          echo "IMAGE_LOWER=$IMAGE" >> $GITHUB_ENV
+          echo "Using image: $IMAGE"
 
       - name: Build Docker image
         run: |
-          docker build -t ghcr.io/${{ env.IMAGE_NAME }}:${{ github.sha }} .
-          docker tag ghcr.io/${{ env.IMAGE_NAME }}:${{ github.sha }} ghcr.io/${{ env.IMAGE_NAME }}:latest
+          docker build -t ${{ env.IMAGE_LOWER }}:${{ github.sha }} .
+          docker tag ${{ env.IMAGE_LOWER }}:${{ github.sha }} ${{ env.IMAGE_LOWER }}:latest
 
-      - name: Install Trivy
+      - name: Trivy Scan
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: ghcr.io/${{ env.IMAGE_NAME }}:${{ github.sha }}
+          image-ref: ${{ env.IMAGE_LOWER }}:${{ github.sha }}
           format: 'table'
           exit-code: '0'
-          ignore-unfixed: true
 
-  # ------------------------
-  # 3. Push to GHCR
-  # ------------------------
   push_image:
     runs-on: ubuntu-latest
     needs: build_and_scan
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Log in to GHCR
+      - name: Login to GHCR
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Push image to GHCR
+      - name: Set lowercase image name
+        id: img
         run: |
-          docker push ghcr.io/${{ env.IMAGE_NAME }}:${{ github.sha }}
-          docker push ghcr.io/${{ env.IMAGE_NAME }}:latest
+          IMAGE="ghcr.io/${GITHUB_REPOSITORY,,}"
+          echo "IMAGE_LOWER=$IMAGE" >> $GITHUB_ENV
+          echo "Using image: $IMAGE"
+
+      - name: Push Docker images
+        run: |
+          docker push ${{ env.IMAGE_LOWER }}:${{ github.sha }}
+          docker push ${{ env.IMAGE_LOWER }}:latest
