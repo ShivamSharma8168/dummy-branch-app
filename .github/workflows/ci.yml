@@ -43,10 +43,10 @@ jobs:
       - name: Set lowercase image repository
         id: set_image
         run: |
-         IMAGE_LOWER="ghcr.io/${GITHUB_REPOSITORY,,}"
-         echo "IMAGE_LOWER=$IMAGE_LOWER" >> $GITHUB_ENV
-         echo "image_lower=$IMAGE_LOWER" >> $GITHUB_OUTPUT
-         echo "Using image: $IMAGE_LOWER"
+          IMAGE_LOWER="ghcr.io/${GITHUB_REPOSITORY,,}"
+          echo "IMAGE_LOWER=$IMAGE_LOWER" >> $GITHUB_ENV
+          echo "image_lower=$IMAGE_LOWER" >> $GITHUB_OUTPUT
+          echo "Using image: $IMAGE_LOWER"
 
 
 
