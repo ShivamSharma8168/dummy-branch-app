@@ -93,7 +93,7 @@ jobs:
 
       - name: Push Docker images
         run: |
-          IMAGE_LOWER="${{ needs.build_and_scan.outputs.image_lower }}"
+          IMAGE_LOWER="${{ needs.build_and_scan.outputs.image_lower }}:latest"
           echo "Pushing: $IMAGE_LOWER"
           docker push $IMAGE_LOWER:${{ github.sha }}
           docker push $IMAGE_LOWER:latest  
