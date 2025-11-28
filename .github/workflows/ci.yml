@@ -52,12 +52,16 @@ jobs:
 
       - name: Build Docker image
         run: |
-          docker build -t ${{ env.IMAGE_LOWER }}:${GITHUB_SHA} .
-          docker tag ${{ env.IMAGE_LOWER }}:${GITHUB_SHA} ${{ env.IMAGE_LOWER }}:latest
+          docker build -t ${{ env.IMAGE_LOWER }}:${{ github.sha }} .
+          docker tag ${{ env.IMAGE_LOWER }}:${{ github.sha }} ${{ env.IMAGE_LOWER }}:latest
+          echo "Built images:"
+          docker images | grep dummy || echo "NO IMAGE BUILT!!!"
+          # docker build -t ${{ env.IMAGE_LOWER }}:${GITHUB_SHA} .
+          # docker tag ${{ env.IMAGE_LOWER }}:${GITHUB_SHA} ${{ env.IMAGE_LOWER }}:latest
 
           # docker build -t $IMAGE_LOWER:${GITHUB_SHA} .
           # docker tag $IMAGE_LOWER:${GITHUB_SHA} $IMAGE_LOWER:latest
-          docker images
+          # docker images
 
       - name: Trivy Scan
         uses: aquasecurity/trivy-action@master
