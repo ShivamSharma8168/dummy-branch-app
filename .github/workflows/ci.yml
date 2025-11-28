@@ -93,13 +93,20 @@ jobs:
 
       - name: Push Docker images
         run: |
-          # read the image name from the previous job's outputs into a shell variable
           IMAGE_LOWER="${{ needs.build_and_scan.outputs.image_lower }}"
-          echo "Pushing images for: $IMAGE_LOWER"
-          # docker push "$IMAGE_LOWER:${GITHUB_SHA}"
-          # docker push "$IMAGE_LOWER:latest"  
-          docker push ${{ env.IMAGE_LOWER }}:${{ github.sha }}
-          docker push ${{ env.IMAGE_LOWER }}:latest
+          echo "Pushing: $IMAGE_LOWER"
+          docker push $IMAGE_LOWER:${{ github.sha }}
+          docker push $IMAGE_LOWER:latest  
+
+      # - name: Push Docker images
+      #   run: |
+      #     # read the image name from the previous job's outputs into a shell variable
+      #     IMAGE_LOWER="${{ needs.build_and_scan.outputs.image_lower }}"
+      #     echo "Pushing images for: $IMAGE_LOWER"
+      #     # docker push "$IMAGE_LOWER:${GITHUB_SHA}"
+      #     # docker push "$IMAGE_LOWER:latest"  
+      #     docker push ${{ env.IMAGE_LOWER }}:${{ github.sha }}
+      #     docker push ${{ env.IMAGE_LOWER }}:latest
 
 
       # - name: Push Docker images
