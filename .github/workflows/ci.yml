@@ -6,10 +6,6 @@ on:
   pull_request:
     branches: [ "main" ]
 
-env:
-  IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/dummy-branch-app
-  IMAGE_NAME_LOWER: ghcr.io/${{ github.repository_owner }}/dummy-branch-app
-
 jobs:
 
   test:
@@ -19,14 +15,20 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-      - run: pip install -r requirements.txt
-      - run: python - << 'EOF'
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      - name: Sanity Test
+        run: |
+          python - << 'EOF'
           print("Sanity OK")
           EOF
 
   build_and_scan:
     runs-on: ubuntu-latest
     needs: test
+    # expose job output so other jobs can use the image repo name
+    outputs:
+      image_lower: ${{ steps.set_image.outputs.image_lower }}
 
     steps:
       - uses: actions/checkout@v4
@@ -38,29 +40,36 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Normalize image name
+      - name: Set lowercase image repository
+        id: set_image
         run: |
-          lower=$(echo "${IMAGE_NAME}" | tr '[:upper:]' '[:lower:]')
-          echo "IMAGE_NAME_LOWER=$lower" >> $GITHUB_ENV
+         IMAGE_LOWER="ghcr.io/${GITHUB_REPOSITORY,,}"
+         echo "IMAGE_LOWER=$IMAGE_LOWER" >> $GITHUB_ENV
+         echo "image_lower=$IMAGE_LOWER" >> $GITHUB_OUTPUT
+         echo "Using image: $IMAGE_LOWER"
 
-      - name: Build image
+
+
+      - name: Build Docker image
         run: |
-          docker build -t ${{ env.IMAGE_NAME_LOWER }}:${{ github.sha }} .
-          docker tag ${{ env.IMAGE_NAME_LOWER }}:${{ github.sha }} ${{ env.IMAGE_NAME_LOWER }}:latest
+          docker build -t $IMAGE_LOWER:${GITHUB_SHA} .
+          docker tag $IMAGE_LOWER:${GITHUB_SHA} $IMAGE_LOWER:latest
           docker images
 
       - name: Trivy Scan
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: ${{ env.IMAGE_NAME_LOWER }}:${{ github.sha }}
+          image-ref: ${{ env.IMAGE_LOWER }}:${{ github.sha }}
+
+
           format: 'table'
           exit-code: '0'
 
   push_image:
-      runs-on: ubuntu-latest
-      needs: build_and_scan
+    runs-on: ubuntu-latest
+    needs: build_and_scan
 
-      steps:
+    steps:
       - uses: actions/checkout@v4
 
       - name: Login to GHCR
@@ -70,8 +79,14 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Push both tags
+      - name: List local images before push
+        run: docker images
+
+      - name: Push Docker images
         run: |
-          docker images
-          docker push ${{ env.IMAGE_NAME_LOWER }}:${{ github.sha }}
-          docker push ${{ env.IMAGE_NAME_LOWER }}:latest
+          # use the image name set in previous job output
+          IMAGE_LOWER="${{ needs.build_and_scan.outputs.image_lower }}"
+          echo "Pushing images for: $IMAGE_LOWER"
+          docker push ${{ env.IMAGE_LOWER }}:${GITHUB_SHA}
+
+          docker push $IMAGE_LOWER:latest
