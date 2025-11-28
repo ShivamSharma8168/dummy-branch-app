@@ -6,8 +6,7 @@ on:
   pull_request:
     branches: [ "main" ]
 
-env:
-  IMAGE_LOWER: ghcr.io/${GITHUB_REPOSITORY,,}
+
 
 jobs:
 
@@ -44,9 +43,10 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Validate image name
-        run: |
-          echo "IMAGE_LOWER=${IMAGE_LOWER}"
+      - name: Set lowercase image repository
+        run: echo "IMAGE_LOWER=ghcr.io/$(echo \"$GITHUB_REPOSITORY\" | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
+
+# And remove IMAGE_LOWER from the top-level 'env' section.
 
       - name: Build Docker image
         run: |
